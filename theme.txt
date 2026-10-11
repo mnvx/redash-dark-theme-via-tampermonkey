@@ -1,0 +1,949 @@
+// ==UserScript==
+// @name         Redash Dark Theme
+// @namespace    https://mycompany.com/
+// @version      1.0.0
+// @description  Dark theme for Redash: UI (Ant Design + Bootstrap), SQL-редактор (Ace).
+// @author       Nick
+// @match        https://redash.mycompany.com/*
+// @run-at       document-start
+// @grant        GM_addStyle
+// @grant        GM_getValue
+// @grant        GM_setValue
+// @grant        GM_registerMenuCommand
+// ==/UserScript==
+
+/*
+ * Edit @match for your domain, for example:
+ *   // @match https://redash.mycompany.com/*
+ * Switching: Manu Tampermonkey → "Toggle Redash dark" or Alt+Shift+D.
+ */
+
+(function () {
+  'use strict';
+
+  const CSS = `
+:root {
+  --rd-bg:        #0e1116;
+  --rd-surface:   #151a21;
+  --rd-surface-2: #1b222b;
+  --rd-surface-3: #232c37;
+  --rd-border:    #2b3440;
+  --rd-border-2:  #3a4553;
+  --rd-text:      #d5dce5;
+  --rd-text-2:    #a7b2c0;
+  --rd-muted:     #7a8696;
+  --rd-accent:    #4c9eff;
+  --rd-accent-h:  #6fb2ff;
+  --rd-accent-bg: rgba(76,158,255,.14);
+  --rd-danger:    #ff6b6b;
+  --rd-success:   #3fcf8e;
+  --rd-warning:   #f5b84a;
+  --rd-hover:     rgba(255,255,255,.045);
+  --rd-select:    rgba(76,158,255,.28);
+  color-scheme: dark;
+}
+
+/* ---------- Base ---------- */
+html, body, #application-root, .application-layout-content,
+.app-content, .page-content, .content-wrapper, .container-fluid,
+.query-page-wrapper, .dashboard-page, .dashboard-wrapper,
+.home-page, .settings-screen, .admin-page-layout,
+.visualization-embed, .public-dashboard-page {
+  background-color: var(--rd-bg) !important;
+  color: var(--rd-text) !important;
+}
+body, p, span, div, label, li, td, th, dt, dd, small,
+h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 { color: inherit; }
+h1, h2, h3, h4, h5, h6, .page-title, .page-header-wrapper h3 { color: var(--rd-text) !important; }
+a { color: var(--rd-accent); }
+a:hover, a:focus { color: var(--rd-accent-h); }
+hr { border-color: var(--rd-border) !important; }
+::selection { background: var(--rd-select); }
+.text-muted, .text-secondary, .ant-typography-secondary, .help-block,
+.query-metadata, .query-metadata__property, .page-header-wrapper .text-muted { color: var(--rd-muted) !important; }
+code, pre, kbd { background: var(--rd-surface-2) !important; color: #e6b673 !important; border-color: var(--rd-border) !important; }
+
+/* Scrollbars */
+* { scrollbar-color: var(--rd-border-2) transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--rd-border-2); border-radius: 6px; border: 2px solid var(--rd-bg); }
+::-webkit-scrollbar-thumb:hover { background: #4a5767; }
+::-webkit-scrollbar-corner { background: transparent; }
+
+/* ---------- Surfaces ---------- */
+.bg-white, .tile, .card, .panel, .well, .ant-card, .ant-layout,
+.ant-layout-content, .page-header-wrapper, .query-header,
+.query-editor-container, .query-results-wrapper, .query-content,
+.query-metadata, .query-page-query-description, .query-results-log,
+.query-fixed-layout, .editor-container, .query-editor-controls,
+.query-results-footer, .query-alerts, .dashboard-header,
+.parameter-container, .parameter-block, .filters-wrapper,
+.widget-wrapper .tile, .visualization-editor, .visualization-renderer,
+.list-content, .list-group, .list-group-item, .settings-screen .content,
+.schema-container, .schema-browser, .schema-control,
+.footer, .empty-state, .empty-state-widget, .onboarding-page,
+.edit-in-place, .table-name, .tags-control, .ant-collapse,
+.ant-collapse-content, .ant-list, .ant-descriptions-view,
+.ant-empty, .ant-result, .sortable-container {
+  background-color: var(--rd-surface) !important;
+  color: var(--rd-text) !important;
+  border-color: var(--rd-border) !important;
+}
+.tile, .card, .panel, .ant-card, .widget-wrapper .tile {
+  box-shadow: 0 1px 0 rgba(255,255,255,.02), 0 2px 8px rgba(0,0,0,.35) !important;
+}
+.panel-heading, .panel-footer, .ant-card-head, .card-header,
+.ant-collapse > .ant-collapse-item > .ant-collapse-header,
+.widget-wrapper .tile .t-header, .ant-descriptions-item-label {
+  background-color: var(--rd-surface-2) !important;
+  color: var(--rd-text) !important;
+  border-color: var(--rd-border) !important;
+}
+.widget-wrapper .tile .t-header .th-title a, .widget-wrapper .tile .t-header .th-title,
+.th-title, .widget-text { color: var(--rd-text) !important; }
+.body-row-auto, .widget-wrapper .body-container { background: transparent !important; }
+.ant-divider, .ant-divider-horizontal.ant-divider-with-text::before,
+.ant-divider-horizontal.ant-divider-with-text::after { border-color: var(--rd-border) !important; }
+
+/* ---------- Side menu / header ---------- */
+.application-layout-side-menu, .desktop-navbar, .mobile-navbar,
+.navbar, .navbar-default, .header, .app-header, .ant-layout-sider,
+.desktop-navbar .ant-menu, .navbar .ant-menu {
+  background-color: #0a0d11 !important;
+  border-color: var(--rd-border) !important;
+}
+.desktop-navbar .ant-menu-item a, .desktop-navbar .ant-menu-submenu-title,
+.desktop-navbar .help-trigger, .desktop-navbar .desktop-navbar-label { color: var(--rd-text-2) !important; }
+.desktop-navbar .ant-menu-item-selected, .desktop-navbar .ant-menu-item:hover { background: var(--rd-accent-bg) !important; }
+
+/* ---------- Ant Menu / Dropdown / Popover / Tooltip ---------- */
+.ant-menu, .ant-menu-sub, .ant-dropdown-menu, .ant-select-dropdown,
+.ant-picker-dropdown .ant-picker-panel-container, .ant-cascader-menus,
+.ant-popover-inner, .ant-popover-content, .ant-mentions-dropdown,
+.ant-tree-select-dropdown, .ant-calendar, .ant-time-picker-panel-inner,
+.dropdown-menu, .ant-dropdown-menu-submenu-popup ul {
+  background-color: var(--rd-surface-2) !important;
+  color: var(--rd-text) !important;
+  border: 1px solid var(--rd-border) !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,.55) !important;
+}
+.ant-popover-title { color: var(--rd-text) !important; border-color: var(--rd-border) !important; }
+.ant-popover-arrow, .ant-popover-arrow-content, .ant-popover-arrow::before { background: var(--rd-surface-2) !important; border-color: var(--rd-surface-2) !important; }
+.ant-popover-inner-content { color: var(--rd-text) !important; }
+.ant-menu-item, .ant-menu-submenu-title, .ant-dropdown-menu-item,
+.ant-dropdown-menu-submenu-title, .ant-select-item, .dropdown-menu > li > a,
+.ant-menu-item a, .ant-dropdown-menu-item a, .ant-cascader-menu-item {
+  color: var(--rd-text) !important;
+}
+.ant-menu-item:hover, .ant-menu-submenu-title:hover, .ant-dropdown-menu-item:hover,
+.ant-dropdown-menu-item-active, .ant-dropdown-menu-submenu-title:hover,
+.ant-select-item-option-active:not(.ant-select-item-option-disabled),
+.dropdown-menu > li > a:hover, .ant-cascader-menu-item:hover {
+  background-color: var(--rd-hover) !important;
+}
+.ant-menu-item-selected, .ant-select-item-option-selected:not(.ant-select-item-option-disabled),
+.ant-menu:not(.ant-menu-horizontal) .ant-menu-item-selected {
+  background-color: var(--rd-accent-bg) !important;
+  color: var(--rd-accent-h) !important;
+}
+.ant-menu-item-divider, .ant-dropdown-menu-item-divider, .dropdown-menu .divider { background-color: var(--rd-border) !important; }
+.ant-menu-item-disabled, .ant-dropdown-menu-item-disabled, .ant-select-item-option-disabled { color: var(--rd-muted) !important; }
+.ant-select-item-group { color: var(--rd-muted) !important; }
+.ant-tooltip-inner { background: #2c3644 !important; color: #e8edf3 !important; box-shadow: 0 4px 14px rgba(0,0,0,.5) !important; }
+.ant-tooltip-arrow-content, .ant-tooltip-arrow::before { background: #2c3644 !important; }
+
+/* ---------- Inputs ---------- */
+input, textarea, select,
+.form-control, .ant-input, .ant-input-affix-wrapper, .ant-input-number,
+.ant-input-number-input, .ant-select-selector, .ant-select-selection,
+.ant-picker, .ant-picker-input > input, .ant-input-group-addon,
+.ant-mentions, .ant-cascader-picker, .ant-input-search, .ant-input-password {
+  background-color: var(--rd-bg) !important;
+  color: var(--rd-text) !important;
+  border-color: var(--rd-border-2) !important;
+}
+.ant-select-multiple .ant-select-selection-item, .ant-select-selection__choice {
+  background: var(--rd-surface-3) !important; border-color: var(--rd-border-2) !important; color: var(--rd-text) !important;
+}
+input::placeholder, textarea::placeholder, .ant-select-selection-placeholder,
+.ant-input::placeholder, .ant-picker-input > input::placeholder { color: var(--rd-muted) !important; opacity: 1; }
+.ant-input:hover, .ant-input-affix-wrapper:hover, .ant-select:not(.ant-select-disabled):hover .ant-select-selector,
+.ant-picker:hover, .form-control:hover { border-color: #4f5d6e !important; }
+.ant-input:focus, .ant-input-focused, .ant-input-affix-wrapper-focused,
+.ant-select-focused .ant-select-selector, .ant-picker-focused, .form-control:focus {
+  border-color: var(--rd-accent) !important;
+  box-shadow: 0 0 0 2px rgba(76,158,255,.22) !important;
+}
+.ant-select-arrow, .ant-select-clear, .ant-picker-suffix, .ant-input-suffix,
+.ant-input-prefix, .ant-picker-clear, .ant-input-clear-icon { color: var(--rd-muted) !important; background: transparent !important; }
+.ant-input-disabled, .ant-select-disabled .ant-select-selector, input[disabled], .form-control[disabled] {
+  background: var(--rd-surface-2) !important; color: var(--rd-muted) !important;
+}
+.ant-form-item-label > label, .control-label, label { color: var(--rd-text-2) !important; }
+.ant-form-item-explain, .ant-form-extra { color: var(--rd-muted) !important; }
+.ant-form-item-has-error .ant-form-item-explain { color: var(--rd-danger) !important; }
+
+/* Checkbox / radio / switch */
+.ant-checkbox-inner, .ant-radio-inner { background-color: var(--rd-bg) !important; border-color: var(--rd-border-2) !important; }
+.ant-checkbox-checked .ant-checkbox-inner, .ant-radio-checked .ant-radio-inner { background-color: var(--rd-accent) !important; border-color: var(--rd-accent) !important; }
+.ant-radio-inner::after { background-color: #fff !important; }
+.ant-checkbox-wrapper, .ant-radio-wrapper { color: var(--rd-text) !important; }
+.ant-radio-button-wrapper { background: var(--rd-surface-2) !important; color: var(--rd-text) !important; border-color: var(--rd-border-2) !important; }
+.ant-radio-button-wrapper-checked { background: var(--rd-accent-bg) !important; color: var(--rd-accent-h) !important; border-color: var(--rd-accent) !important; }
+.ant-switch { background-color: #3a4553 !important; }
+.ant-switch-checked { background-color: var(--rd-accent) !important; }
+
+/* Date picker panel */
+.ant-picker-panel, .ant-picker-header, .ant-picker-footer, .ant-picker-time-panel-column {
+  background: var(--rd-surface-2) !important; border-color: var(--rd-border) !important; color: var(--rd-text) !important;
+}
+.ant-picker-header button, .ant-picker-content th, .ant-picker-cell { color: var(--rd-text-2) !important; }
+.ant-picker-cell-in-view { color: var(--rd-text) !important; }
+.ant-picker-cell:hover .ant-picker-cell-inner,
+.ant-picker-time-panel-column > li.ant-picker-time-panel-cell .ant-picker-time-panel-cell-inner:hover { background: var(--rd-hover) !important; }
+.ant-picker-cell-in-range::before, .ant-picker-cell-range-start::before, .ant-picker-cell-range-end::before { background: var(--rd-accent-bg) !important; }
+.ant-picker-cell-selected .ant-picker-cell-inner,
+.ant-picker-time-panel-column > li.ant-picker-time-panel-cell-selected .ant-picker-time-panel-cell-inner { background: var(--rd-accent) !important; color: #fff !important; }
+.ant-picker-time-panel-cell-inner { color: var(--rd-text) !important; }
+
+/* ---------- Buttons ---------- */
+.ant-btn, .btn, .btn-default {
+  background-color: var(--rd-surface-2) !important;
+  color: var(--rd-text) !important;
+  border-color: var(--rd-border-2) !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+.ant-btn:hover, .ant-btn:focus, .btn:hover, .btn-default:hover, .btn-default:focus {
+  background-color: var(--rd-surface-3) !important;
+  color: #fff !important;
+  border-color: #4f5d6e !important;
+}
+.ant-btn-primary, .btn-primary {
+  background-color: var(--rd-accent) !important;
+  border-color: var(--rd-accent) !important;
+  color: #fff !important;
+}
+.ant-btn-primary:hover, .ant-btn-primary:focus, .btn-primary:hover { background-color: var(--rd-accent-h) !important; border-color: var(--rd-accent-h) !important; }
+.ant-btn-dangerous, .ant-btn-danger, .btn-danger { color: var(--rd-danger) !important; border-color: rgba(255,107,107,.5) !important; }
+.ant-btn-dangerous.ant-btn-primary, .ant-btn-danger.ant-btn-primary, .btn-danger { background-color: #c44545 !important; color: #fff !important; }
+.ant-btn-link, .ant-btn-text, .btn-link { background: transparent !important; border-color: transparent !important; color: var(--rd-accent) !important; }
+.ant-btn-text { color: var(--rd-text-2) !important; }
+.ant-btn-text:hover, .ant-btn-link:hover { background: var(--rd-hover) !important; }
+.ant-btn[disabled], .ant-btn[disabled]:hover, .btn[disabled] {
+  background: var(--rd-surface) !important; color: var(--rd-muted) !important; border-color: var(--rd-border) !important;
+}
+.btn-success { background: #23865a !important; border-color: #23865a !important; color: #fff !important; }
+.ant-btn-group .ant-btn + .ant-btn { border-left-color: var(--rd-border) !important; }
+
+/* ---------- Tabs ---------- */
+.ant-tabs, .ant-tabs-tab, .nav-tabs > li > a { color: var(--rd-text-2) !important; }
+.ant-tabs-nav::before, .ant-tabs-bar, .nav-tabs { border-color: var(--rd-border) !important; }
+.ant-tabs-tab-active .ant-tabs-tab-btn, .ant-tabs-tab:hover, .ant-tabs-tab-active { color: var(--rd-accent-h) !important; }
+.ant-tabs-ink-bar { background: var(--rd-accent) !important; }
+.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab, .ant-tabs-card .ant-tabs-tab,
+.query-results-wrapper .ant-tabs-tab, .nav-tabs > li > a {
+  background: var(--rd-surface-2) !important; border-color: var(--rd-border) !important;
+}
+.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab-active, .nav-tabs > li.active > a {
+  background: var(--rd-surface) !important; border-bottom-color: var(--rd-surface) !important; color: var(--rd-accent-h) !important;
+}
+
+/* ---------- Tables ---------- */
+.ant-table, .ant-table-container, .ant-table-content, .ant-table-body,
+.ant-table-placeholder, .ant-table-tbody > tr > td, .table, .table > tbody > tr > td,
+.table-data, .ant-table-sticky-holder {
+  background-color: var(--rd-surface) !important;
+  color: var(--rd-text) !important;
+  border-color: var(--rd-border) !important;
+}
+.ant-table-thead > tr > th, .table > thead > tr > th, .ant-table-summary,
+.ant-table-cell-fix-left, .ant-table-cell-fix-right, th {
+  background-color: var(--rd-surface-2) !important;
+  color: var(--rd-text-2) !important;
+  border-color: var(--rd-border) !important;
+}
+.ant-table-thead > tr > th { font-weight: 600 !important; }
+.ant-table-tbody > tr > td, .table td, .table th, .ant-table-bordered td, .ant-table-bordered th {
+  border-color: var(--rd-border) !important;
+}
+.ant-table-tbody > tr:hover > td, .ant-table-tbody > tr.ant-table-row:hover > td,
+.table-hover > tbody > tr:hover > td, .ant-table-tbody > tr > td.ant-table-cell-row-hover {
+  background-color: var(--rd-surface-3) !important;
+}
+.table-striped > tbody > tr:nth-of-type(odd) > td,
+.ant-table-tbody > tr:nth-child(even) > td { background-color: #181e26 !important; }
+.ant-table-tbody > tr.ant-table-row-selected > td { background: var(--rd-accent-bg) !important; }
+.ant-table-column-sorter, .ant-table-filter-trigger { color: var(--rd-muted) !important; }
+.ant-table-column-sorter-up.active, .ant-table-column-sorter-down.active { color: var(--rd-accent) !important; }
+.ant-table-column-sort { background: #19202a !important; }
+.ant-table-filter-dropdown { background: var(--rd-surface-2) !important; }
+.table-visualization-container .display-as-number, .table-visualization-container td { color: var(--rd-text) !important; }
+
+/* Pagination */
+.ant-pagination-item, .ant-pagination-prev .ant-pagination-item-link,
+.ant-pagination-next .ant-pagination-item-link, .ant-pagination-jump-prev,
+.ant-pagination-jump-next, .pagination > li > a {
+  background: var(--rd-surface-2) !important; border-color: var(--rd-border-2) !important;
+}
+.ant-pagination-item a, .ant-pagination-item-link, .pagination > li > a,
+.ant-pagination-item-ellipsis, .ant-pagination-total-text { color: var(--rd-text) !important; }
+.ant-pagination-item-active { border-color: var(--rd-accent) !important; }
+.ant-pagination-item-active a { color: var(--rd-accent-h) !important; }
+
+/* ---------- Modals / drawers ---------- */
+.ant-modal-content, .ant-modal-header, .ant-modal-body, .ant-modal-footer,
+.ant-drawer-content, .ant-drawer-header, .ant-drawer-body, .ant-drawer-footer,
+.modal-content, .modal-header, .modal-body, .modal-footer {
+  background-color: var(--rd-surface) !important;
+  color: var(--rd-text) !important;
+  border-color: var(--rd-border) !important;
+}
+.ant-modal-content, .modal-content { box-shadow: 0 16px 48px rgba(0,0,0,.6) !important; }
+.ant-modal-title, .ant-drawer-title, .modal-title, .ant-modal-confirm-title { color: var(--rd-text) !important; }
+.ant-modal-confirm-content { color: var(--rd-text-2) !important; }
+.ant-modal-close, .ant-modal-close-x, .ant-drawer-close, .close { color: var(--rd-muted) !important; text-shadow: none !important; opacity: 1 !important; }
+.ant-modal-mask, .modal-backdrop { background-color: rgba(0,0,0,.65) !important; }
+
+/* ---------- Alerts / tags / badges / messages ---------- */
+.ant-alert, .alert { background: var(--rd-surface-2) !important; border-color: var(--rd-border-2) !important; color: var(--rd-text) !important; }
+.ant-alert-message, .ant-alert-description { color: var(--rd-text) !important; }
+.ant-alert-info, .alert-info { background: rgba(76,158,255,.1) !important; border-color: rgba(76,158,255,.35) !important; }
+.ant-alert-warning, .alert-warning { background: rgba(245,184,74,.1) !important; border-color: rgba(245,184,74,.35) !important; }
+.ant-alert-error, .alert-danger { background: rgba(255,107,107,.1) !important; border-color: rgba(255,107,107,.35) !important; }
+.ant-alert-success, .alert-success { background: rgba(63,207,142,.1) !important; border-color: rgba(63,207,142,.35) !important; }
+.ant-tag, .label-default, .label-tag, .tags-list .label {
+  background: var(--rd-surface-3) !important; border-color: var(--rd-border-2) !important; color: var(--rd-text-2) !important;
+}
+.ant-tag-blue, .label-primary { background: var(--rd-accent-bg) !important; color: var(--rd-accent-h) !important; border-color: rgba(76,158,255,.35) !important; }
+.ant-message-notice-content, .ant-notification-notice {
+  background: var(--rd-surface-2) !important; color: var(--rd-text) !important; box-shadow: 0 8px 24px rgba(0,0,0,.55) !important;
+}
+.ant-notification-notice-message, .ant-notification-notice-description { color: var(--rd-text) !important; }
+.ant-badge-count { box-shadow: 0 0 0 1px var(--rd-surface) !important; }
+.ant-steps-item-title, .ant-steps-item-description { color: var(--rd-text-2) !important; }
+.ant-progress-inner { background: var(--rd-surface-3) !important; }
+.ant-skeleton-content .ant-skeleton-title, .ant-skeleton-content .ant-skeleton-paragraph > li { background: var(--rd-surface-3) !important; }
+.ant-spin-container::after { background: var(--rd-bg) !important; }
+
+/* ---------- Lists (queries, dashboards, alerts...) ---------- */
+.list-group-item, .ant-list-item, .ant-list-split .ant-list-item { border-color: var(--rd-border) !important; color: var(--rd-text) !important; }
+.list-group-item:hover, .list-group-item.active, a.list-group-item:hover { background: var(--rd-hover) !important; color: var(--rd-text) !important; }
+.list-group-item.active { background: var(--rd-accent-bg) !important; border-color: var(--rd-border) !important; }
+.list-group-item .text-muted { color: var(--rd-muted) !important; }
+.favorites-dropdown, .home-page .tile .list-group-item { background: transparent !important; }
+.btn-favourite, .btn-favorite { color: var(--rd-muted) !important; }
+.btn-favourite .fa-star, .btn-favorite .fa-star, .ant-rate-star-full { color: #f5b84a !important; }
+
+/* ---------- Query page ---------- */
+.query-page-wrapper .query-fullscreen, .query-page-wrapper .query-view-content,
+.query-page-wrapper .row.query-fixed-layout, .query-editor-container .editor,
+.query-page-wrapper .query-editor-controls, .query-results-footer,
+.query-execution-status, .query-execution-metadata, .query-page-wrapper .bottom-controller,
+.query-results-wrapper .query-alerts, .resizable-component, .query-results {
+  background-color: var(--rd-surface) !important;
+  color: var(--rd-text) !important;
+  border-color: var(--rd-border) !important;
+}
+.query-execution-metadata span, .query-results-footer span { color: var(--rd-text-2) !important; }
+.query-page-wrapper .query-header .page-title, .edit-in-place, .edit-in-place span { color: var(--rd-text) !important; }
+.react-resizable-handle, .ant-layout-sider-trigger, .resizable-component .resizable-component-handle {
+  background-color: var(--rd-border) !important;
+}
+
+/* Schema browser */
+.schema-browser .table-name, .schema-browser .table-open, .schema-list-item,
+.schema-browser .schema-list-item, .schema-browser .table-open .column-type {
+  background: transparent !important; color: var(--rd-text) !important;
+}
+.schema-browser .table-name:hover, .schema-list-item:hover, .schema-browser .table-open:hover { background: var(--rd-hover) !important; }
+.schema-browser .table-open, .schema-browser .column-type, .schema-browser .table-open .column-type { color: var(--rd-text-2) !important; }
+.schema-control .ant-input, .schema-control .form-control { background: var(--rd-bg) !important; }
+
+/* ---------- Ace editor (SQL) ---------- */
+.ace_editor, .ace-tm, .ace_editor .ace_content, .ace_scroller {
+  background-color: #0b0e13 !important; color: #d5dce5 !important;
+}
+.ace_editor .ace_gutter, .ace-tm .ace_gutter {
+  background: #0f1319 !important; color: #4e5a69 !important; border-right: 1px solid var(--rd-border) !important;
+}
+.ace-tm .ace_gutter-active-line { background: #161c24 !important; color: #a7b2c0 !important; }
+.ace-tm .ace_marker-layer .ace_active-line { background: #141a22 !important; }
+.ace-tm .ace_marker-layer .ace_selection { background: rgba(76,158,255,.30) !important; }
+.ace-tm .ace_marker-layer .ace_selected-word { background: rgba(76,158,255,.14) !important; border: 1px solid rgba(76,158,255,.4) !important; }
+.ace-tm .ace_marker-layer .ace_bracket { border-color: #6c7a8c !important; margin: -1px 0 0 -1px; }
+.ace-tm .ace_marker-layer .ace_step { background: rgba(245,184,74,.2) !important; }
+.ace-tm .ace_cursor { color: #4c9eff !important; border-left-color: #4c9eff !important; }
+.ace-tm .ace_print-margin { background: #1b222b !important; width: 1px; }
+.ace-tm .ace_indent-guide { background: none !important; box-shadow: inset 1px 0 0 #1d242e; }
+.ace-tm .ace_invisible { color: #2f3946 !important; }
+.ace-tm .ace_fold { background-color: #2b3440 !important; border-color: #4a5767 !important; }
+
+.ace-tm .ace_keyword, .ace-tm .ace_storage, .ace-tm .ace_keyword.ace_operator { color: #c792ea !important; }
+.ace-tm .ace_keyword.ace_operator, .ace-tm .ace_paren { color: #89ddff !important; }
+.ace-tm .ace_string, .ace-tm .ace_string.ace_regexp { color: #c3e88d !important; }
+.ace-tm .ace_constant.ace_numeric { color: #f78c6c !important; }
+.ace-tm .ace_constant.ace_language, .ace-tm .ace_constant.ace_buildin, .ace-tm .ace_constant { color: #ff9cac !important; }
+.ace-tm .ace_comment { color: #5c6b7e !important; font-style: italic; }
+.ace-tm .ace_support.ace_function, .ace-tm .ace_entity.ace_name.ace_function { color: #82aaff !important; }
+.ace-tm .ace_support.ace_type, .ace-tm .ace_support.ace_class, .ace-tm .ace_storage.ace_type { color: #ffcb6b !important; }
+.ace-tm .ace_variable, .ace-tm .ace_variable.ace_parameter { color: #f07178 !important; }
+.ace-tm .ace_identifier { color: #d5dce5 !important; }
+.ace-tm .ace_invalid { background: #5a1f24 !important; color: #ffd0d0 !important; }
+.ace-tm .ace_text-layer .ace_punctuation { color: #89ddff !important; }
+
+/* Ace autocomplete popup */
+.ace_editor.ace_autocomplete, .ace_autocomplete {
+  background: var(--rd-surface-2) !important; color: var(--rd-text) !important;
+  border: 1px solid var(--rd-border-2) !important; box-shadow: 0 8px 24px rgba(0,0,0,.55) !important;
+}
+.ace_autocomplete .ace_marker-layer .ace_active-line { background: var(--rd-accent-bg) !important; }
+.ace_autocomplete .ace_line-hover { background: var(--rd-hover) !important; border-color: transparent !important; }
+.ace_autocomplete .ace_completion-highlight { color: var(--rd-accent-h) !important; }
+.ace_autocomplete .ace_completion-meta, .ace_autocomplete .ace_rightAlignedText { color: var(--rd-muted) !important; }
+.ace_tooltip { background: var(--rd-surface-2) !important; color: var(--rd-text) !important; border-color: var(--rd-border-2) !important; }
+
+/* ---------- Plotly charts ---------- */
+.js-plotly-plot .plotly .main-svg { background: transparent !important; }
+.js-plotly-plot .plotly .bg, .js-plotly-plot .legend .bg { fill: transparent !important; }
+.js-plotly-plot .plotly .xtick text, .js-plotly-plot .plotly .ytick text,
+.js-plotly-plot .plotly .y2tick text, .js-plotly-plot .plotly .g-xtitle text,
+.js-plotly-plot .plotly .g-ytitle text, .js-plotly-plot .plotly .g-y2title text,
+.js-plotly-plot .plotly .gtitle, .js-plotly-plot .plotly .legendtext,
+.js-plotly-plot .plotly .annotation-text, .js-plotly-plot .plotly .slicetext,
+.js-plotly-plot .plotly .pielayer text, .js-plotly-plot .plotly .cbtitle text,
+.js-plotly-plot .plotly .cbaxis text {
+  fill: var(--rd-text-2) !important;
+}
+.js-plotly-plot .plotly .gridlayer path, .js-plotly-plot .plotly .crisp,
+.js-plotly-plot .plotly .ygrid, .js-plotly-plot .plotly .xgrid { stroke: #232b35 !important; }
+.js-plotly-plot .plotly .zerolinelayer path, .js-plotly-plot .plotly .zl { stroke: #3a4553 !important; }
+.js-plotly-plot .plotly .xlines-above, .js-plotly-plot .plotly .ylines-above { stroke: var(--rd-border-2) !important; }
+.js-plotly-plot .plotly .modebar { background: transparent !important; }
+.js-plotly-plot .plotly .modebar-btn path { fill: var(--rd-muted) !important; }
+.js-plotly-plot .plotly .modebar-btn:hover path, .js-plotly-plot .plotly .modebar-btn.active path { fill: var(--rd-text) !important; }
+.js-plotly-plot .plotly .rangeslider-bg { fill: var(--rd-surface-2) !important; stroke: var(--rd-border) !important; }
+
+/* ---------- Counter / text / pivot / cohort / map ---------- */
+.counter-visualization-container, .counter-visualization-content { background: transparent !important; }
+.counter-visualization-value { color: var(--rd-text) !important; }
+.counter-visualization-target, .counter-visualization-label { color: var(--rd-muted) !important; }
+.markdown, .widget-text .markdown, .query-page-query-description { color: var(--rd-text) !important; }
+.markdown table td, .markdown table th { border-color: var(--rd-border) !important; }
+
+.pvtUi, .pvtUi td, .pvtTable, .pvtAxisContainer, .pvtVals, .pvtRenderers,
+.pvtUi select, .pvtFilterBox, .pvtCheckContainer {
+  background: var(--rd-surface) !important; color: var(--rd-text) !important; border-color: var(--rd-border) !important;
+}
+.pvtTable thead tr th, .pvtTable tbody tr th { background: var(--rd-surface-2) !important; color: var(--rd-text-2) !important; border-color: var(--rd-border) !important; }
+.pvtTable tbody tr td { background: var(--rd-surface) !important; color: var(--rd-text) !important; border-color: var(--rd-border) !important; }
+.pvtAxis, .pvtAttr { background: var(--rd-surface-3) !important; border-color: var(--rd-border-2) !important; color: var(--rd-text) !important; }
+.pvtTotal, .pvtGrandTotal { font-weight: 600; }
+
+.cohort-visualization-container table, .cornelius-container, .cornelius-table td, .cornelius-table th {
+  background-color: var(--rd-surface) !important; color: var(--rd-text) !important; border-color: var(--rd-border) !important;
+}
+.cornelius-table .cornelius-empty { background: var(--rd-surface) !important; }
+
+.leaflet-container { background: #0b0e13 !important; }
+.leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(.85) contrast(.9) saturate(.6); }
+.leaflet-control-zoom a, .leaflet-bar a, .leaflet-control-layers, .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: var(--rd-surface-2) !important; color: var(--rd-text) !important; border-color: var(--rd-border) !important;
+}
+.leaflet-control-attribution { background: rgba(14,17,22,.7) !important; color: var(--rd-muted) !important; }
+.leaflet-control-attribution a { color: var(--rd-text-2) !important; }
+
+/* Sankey / sunburst / word cloud (D3) */
+.sankey-visualization-container text, .sunburst-visualization-container text,
+.word-cloud-visualization-container text { fill: var(--rd-text-2) !important; }
+.sunburst-visualization-container .sunburst-visualization-breadcrumbs, .sankey .link { stroke-opacity: .35; }
+
+/* ---------- Dashboards ---------- */
+.dashboard-wrapper .react-grid-layout, .dashboard-widget-wrapper, .layout {
+  background: transparent !important;
+}
+.react-grid-item.react-grid-placeholder { background: var(--rd-accent) !important; opacity: .15 !important; }
+.dashboard-wrapper.editing-mode .widget-wrapper .tile { outline: 1px dashed var(--rd-border-2); }
+.add-widget-container, .dashboard-header .tags-control { background: var(--rd-surface) !important; border-color: var(--rd-border) !important; }
+.widget-wrapper .tile .t-footer, .widget-wrapper .tile .t-footer span, .refresh-indicator { color: var(--rd-muted) !important; background: transparent !important; }
+.parameter-input, .parameter-block .parameter-heading { color: var(--rd-text-2) !important; }
+
+/* ---------- Misc ---------- */
+.ant-breadcrumb, .ant-breadcrumb a, .ant-breadcrumb-separator { color: var(--rd-muted) !important; }
+.ant-breadcrumb > span:last-child { color: var(--rd-text) !important; }
+.ant-empty-description, .empty-state .empty-state__summary { color: var(--rd-muted) !important; }
+.empty-state .empty-state__step .step-number, .empty-state__steps li { color: var(--rd-text-2) !important; }
+.ant-typography, .ant-typography-copy { color: var(--rd-text) !important; }
+.ant-upload, .ant-upload-drag { background: var(--rd-surface-2) !important; border-color: var(--rd-border-2) !important; }
+.ant-avatar { background: var(--rd-surface-3) !important; }
+.ant-collapse-borderless { background: var(--rd-surface) !important; }
+.ant-anchor-link-title, .ant-tree, .ant-tree-node-content-wrapper { color: var(--rd-text) !important; background: transparent !important; }
+.ant-tree-node-selected { background: var(--rd-accent-bg) !important; }
+.btn-group .btn.active, .btn.active, .btn:active { background: var(--rd-surface-3) !important; box-shadow: inset 0 2px 4px rgba(0,0,0,.4) !important; }
+.loading-indicator, .ant-spin-blur { background: transparent !important; }
+
+/* Login / setup pages */
+.fixed-width-page, .signed-out-page, .login-form, .signed-out-page .tile {
+  background-color: var(--rd-bg) !important; color: var(--rd-text) !important;
+}
+
+/* Keyboard focus */
+:focus-visible { outline: 2px solid var(--rd-accent) !important; outline-offset: 1px; }
+
+/* ---------- Visual cards (Data Sources, Destinations, New DS dialog) ---------- */
+.visual-card-list, .visual-card-list .visual-card-list-item { background: transparent !important; }
+.visual-card, .visual-card-list .visual-card, a.visual-card {
+  background-color: var(--rd-surface-2) !important;
+  border: 1px solid var(--rd-border) !important;
+  box-shadow: none !important;
+  color: var(--rd-text) !important;
+}
+.visual-card:hover, a.visual-card:hover {
+  background-color: var(--rd-surface-3) !important;
+  border-color: var(--rd-accent) !important;
+}
+.visual-card h3, .visual-card .visual-card-title, .visual-card span {
+  color: var(--rd-text) !important;
+}
+.visual-card img { background: transparent !important; }
+
+/* ---------- Query view: visualization tabs / empty state ---------- */
+.query-visualization-tabs,
+.query-visualization-tabs .ant-tabs-content-holder,
+.query-visualization-tabs .ant-tabs-content,
+.query-visualization-tabs .ant-tabs-tabpane,
+.query-page-wrapper .ant-tabs-content-holder,
+.query-page-wrapper .ant-tabs-content,
+.query-page-wrapper .ant-tabs-tabpane,
+.query-view-content,
+.query-results-empty-state,
+.visualization-renderer-wrapper,
+[class*="query-results"] {
+  background-color: var(--rd-surface) !important;
+  color: var(--rd-text) !important;
+  border-color: var(--rd-border) !important;
+}
+.query-visualization-tabs .ant-tabs-nav,
+.query-page-wrapper .ant-tabs-nav { background: transparent !important; }
+
+/* Empty state: текст и иллюстрация */
+.query-results-empty-state h1, .query-results-empty-state h2,
+.query-results-empty-state h3, .query-results-empty-state .ant-typography,
+.query-results-empty-state [class*="title"] { color: var(--rd-text-2) !important; }
+.query-results-empty-state p, .query-results-empty-state [class*="description"] { color: var(--rd-muted) !important; }
+.query-results-empty-state img, .query-results-empty-state svg {
+  filter: invert(.88) hue-rotate(180deg) brightness(.9);
+}
+
+/* ---------- Ace gutter (номера строк) ---------- */
+.ace_editor .ace_gutter,
+.ace_editor .ace_gutter-layer,
+.ace_editor .ace_gutter-cell,
+.ace_editor .ace_layer.ace_gutter-layer {
+  background-color: #0f1319 !important;
+  color: #4e5a69 !important;
+}
+.ace_editor .ace_gutter-active-line,
+.ace_editor .ace_gutter-cell.ace_gutter-active-line {
+  background-color: #161c24 !important;
+  color: #a7b2c0 !important;
+}
+
+/* ---------- Query source page: полоса между редактором и результатами ---------- */
+.query-page-wrapper section,
+.query-page-wrapper .flex-fill,
+.query-page-wrapper .d-flex,
+.query-page-wrapper .row,
+.query-page-wrapper [class*="col-"],
+.query-page-wrapper .container,
+.query-page-wrapper .query-source-editor,
+.query-page-wrapper .query-results-wrapper,
+.query-page-wrapper .query-results-wrapper > div,
+.query-page-wrapper .editor__wrapper,
+.query-page-wrapper .editor__container,
+.query-page-wrapper .bottom-controller-container {
+  background-color: var(--rd-surface) !important;
+}
+.query-page-wrapper .resizable-component-handle,
+.query-page-wrapper .react-resizable-handle,
+.query-page-wrapper [class*="resize"] {
+  background-color: var(--rd-surface-2) !important;
+}
+
+/* ---------- Table viz: sticky header ---------- */
+.ant-table-header,
+.ant-table-fixed-header .ant-table-header,
+.ant-table-fixed-header .ant-table-scroll .ant-table-header,
+.ant-table-header table,
+.ant-table-header colgroup,
+.ant-table-thead,
+.ant-table-thead > tr,
+html body .table-visualization-container .ant-table-thead > tr > th,
+html body .table-visualization-container .ant-table-header th,
+html body .ant-table-wrapper .ant-table-thead > tr > th,
+html body .ant-table-thead > tr > th.ant-table-cell,
+html body .ant-table-thead > tr > th.ant-table-column-has-sorters,
+html body .ant-table-thead > tr > th.ant-table-column-sort {
+  background-color: var(--rd-surface-2) !important;
+  color: var(--rd-text-2) !important;
+  border-color: var(--rd-border) !important;
+}
+html body .ant-table-thead > tr > th:hover,
+html body .ant-table-thead > tr > th.ant-table-column-has-sorters:hover {
+  background-color: var(--rd-surface-3) !important;
+}
+.ant-table-thead > tr > th::before { background-color: var(--rd-border) !important; }
+.ant-table-header::-webkit-scrollbar { background: var(--rd-surface-2) !important; }
+.ant-table-cell-scrollbar { background: var(--rd-surface-2) !important; box-shadow: none !important; }
+
+.rd-dark-fixed { color: var(--rd-text-2) !important; }
+
+/* ---------- Tags: читаемые ---------- */
+html body .ant-tag,
+html body .ant-tag a,
+html body .ant-tag span,
+html body .label-tag,
+html body .tags-list .label,
+html body .ant-form-item .ant-tag {
+  background-color: var(--rd-surface-3) !important;
+  border-color: var(--rd-border-2) !important;
+  color: var(--rd-text) !important;
+  opacity: 1 !important;
+}
+html body a.ant-tag:hover, html body .ant-tag a:hover {
+  border-color: var(--rd-accent) !important;
+  color: #fff !important;
+}
+
+/* ---------- Primary button: приглушённый синий ---------- */
+html body .ant-btn-primary,
+html body .btn-primary {
+  background-color: #2a5ea8 !important;
+  border-color: #2a5ea8 !important;
+  color: #e8f1ff !important;
+}
+html body .ant-btn-primary:hover,
+html body .ant-btn-primary:focus,
+html body .btn-primary:hover {
+  background-color: #3470c4 !important;
+  border-color: #3470c4 !important;
+  color: #fff !important;
+}
+html body .ant-btn-primary:active { background-color: #234f8e !important; border-color: #234f8e !important; }
+html body .ant-btn-primary[disabled], html body .ant-btn-primary[disabled]:hover {
+  background-color: var(--rd-surface-2) !important;
+  border-color: var(--rd-border) !important;
+  color: var(--rd-muted) !important;
+}
+
+/* ---------- Widget title: имя визуализации + имя запроса ---------- */
+html body .widget-wrapper .tile .t-header .th-title,
+html body .widget-wrapper .tile .t-header .th-title p,
+html body .widget-wrapper .tile .t-header .th-title a,
+html body .widget-wrapper .tile .t-header .th-title span,
+html body .query-link,
+html body .query-link span {
+  color: var(--rd-text) !important;
+}
+html body .query-link .visualization-name,
+html body .widget-wrapper .tile .t-header .visualization-name {
+  color: var(--rd-text-2) !important;
+}
+html body .query-link .visualization-name::after,
+html body .query-link .visualization-name::before {
+  color: var(--rd-muted) !important;
+}
+html body .query-link:hover,
+html body .query-link:hover span {
+  color: var(--rd-accent-h) !important;
+}
+/* описание под заголовком виджета */
+html body .widget-wrapper .tile .t-header .text-muted,
+html body .widget-wrapper .tile .t-header .th-description {
+  color: var(--rd-muted) !important;
+}
+
+/* ---------- Plotly modebar ---------- */
+html body .js-plotly-plot .plotly .modebar,
+html body .js-plotly-plot .plotly .modebar-group {
+  background-color: transparent !important;
+}
+html body .js-plotly-plot .plotly .modebar-container .modebar {
+  background: var(--rd-surface-2) !important;
+  border: 1px solid var(--rd-border) !important;
+  border-radius: 6px !important;
+  padding: 2px 4px !important;
+}
+html body .js-plotly-plot .plotly .modebar-btn path,
+html body .js-plotly-plot .plotly .modebar-btn .icon path {
+  fill: var(--rd-muted) !important;
+}
+html body .js-plotly-plot .plotly .modebar-btn:hover path,
+html body .js-plotly-plot .plotly .modebar-btn.active path {
+  fill: var(--rd-accent-h) !important;
+}
+html body .js-plotly-plot .plotly .modebar-btn:hover {
+  background: var(--rd-hover) !important;
+  border-radius: 4px;
+}
+
+/* Подсказка кнопок modebar */
+html body .js-plotly-plot .plotly [data-title]::after {
+  background: #2c3644 !important;
+  color: #e8edf3 !important;
+  box-shadow: 0 4px 14px rgba(0,0,0,.5) !important;
+  border-radius: 4px !important;
+}
+html body .js-plotly-plot .plotly [data-title]::before {
+  border-bottom-color: #2c3644 !important;
+}
+
+/* Hover-лейблы на графике (значения точек) */
+html body .js-plotly-plot .plotly .hoverlayer .hovertext path {
+  stroke: var(--rd-border-2) !important;
+}
+html body .js-plotly-plot .plotly .hoverlayer .axistext path {
+  fill: var(--rd-surface-3) !important;
+  stroke: var(--rd-border-2) !important;
+}
+html body .js-plotly-plot .plotly .hoverlayer .axistext text {
+  fill: var(--rd-text) !important;
+}
+
+html body .js-plotly-plot .plotly .modebar-container .modebar {
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  border-radius: 6px !important;
+  padding: 2px 4px !important;
+  transition: background-color .3s, border-color .3s;
+}
+html body .js-plotly-plot .plotly:hover .modebar-container .modebar {
+  background: var(--rd-surface-2) !important;
+  border-color: var(--rd-border) !important;
+}
+
+/* ---------- Pie / sunburst: подписи на секторах ---------- */
+html body .js-plotly-plot .plotly .pielayer .slicetext,
+html body .js-plotly-plot .plotly .pielayer .slicetext text,
+html body .js-plotly-plot .plotly .pielayer text.slicetext {
+  fill: #fff !important;
+  text-shadow: none !important;
+  stroke: rgba(0,0,0,.55) !important;
+  stroke-width: 3px !important;
+  stroke-linejoin: round !important;
+  paint-order: stroke fill !important;
+  font-weight: 400 !important;
+}
+/* подписи снаружи сектора (outside) и линии к ним */
+html body .js-plotly-plot .plotly .pielayer .titletext,
+html body .js-plotly-plot .plotly .pielayer .outsidetext {
+  fill: var(--rd-text) !important;
+  stroke: none !important;
+}
+html body .js-plotly-plot .plotly .pielayer path.textline {
+  stroke: var(--rd-border-2) !important;
+}
+
+/* ---------- Funnel visualization ---------- */
+html body .funnel-visualization-container table,
+html body .funnel-visualization-container td,
+html body .funnel-visualization-container th {
+  background-color: transparent !important;
+  border-color: var(--rd-border) !important;
+}
+html body .funnel-visualization-container .funnel-bar {
+  position: relative;
+}
+/* Полоски: колонка Value — акцент, % Previous — нейтральная */
+html body .funnel-visualization-container .funnel-bar-value {
+  background-color: rgba(76,158,255,.35) !important;
+  border: 1px solid rgba(76,158,255,.55) !important;
+  border-radius: 3px;
+}
+html body .funnel-visualization-container td:last-child .funnel-bar-value {
+  background-color: rgba(167,178,192,.18) !important;
+  border-color: rgba(167,178,192,.35) !important;
+}
+/* Подписи поверх полосок */
+html body .funnel-visualization-container .funnel-bar-label {
+  color: var(--rd-text) !important;
+  font-weight: 600;
+  text-shadow: 0 0 3px rgba(0,0,0,.8), 0 0 1px rgba(0,0,0,.9) !important;
+}
+
+/* ---------- Plotly hover labels (все графики) ---------- */
+/* Подложка имени серии */
+html body .js-plotly-plot .plotly .hoverlayer .hovertext rect {
+  fill: var(--rd-surface-2) !important;
+  fill-opacity: .96 !important;
+  stroke: var(--rd-border-2) !important;
+  stroke-width: 1px !important;
+}
+/* Имя серии — нейтральный светлый текст */
+html body .js-plotly-plot .plotly .hoverlayer .hovertext text.name,
+html body .js-plotly-plot .plotly .hoverlayer .hovertext text.name tspan {
+  fill: var(--rd-text) !important;
+}
+/* Число на цветном квадрате — белое с обводкой, читается на любом цвете */
+html body .js-plotly-plot .plotly .hoverlayer .hovertext text.nums,
+html body .js-plotly-plot .plotly .hoverlayer .hovertext text.nums tspan {
+  fill: #fff !important;
+  stroke: rgba(0,0,0,.55) !important;
+  stroke-width: 2.5px !important;
+  stroke-linejoin: round !important;
+  paint-order: stroke fill !important;
+  font-weight: 600 !important;
+}
+/* Без лишней тени Plotly */
+html body .js-plotly-plot .plotly .hoverlayer text {
+  text-shadow: none !important;
+}
+
+/* Режим hovermode: "x unified" — общая плашка */
+html body .js-plotly-plot .plotly .hoverlayer .legend .bg {
+  fill: var(--rd-surface-2) !important;
+  fill-opacity: .96 !important;
+  stroke: var(--rd-border-2) !important;
+}
+html body .js-plotly-plot .plotly .hoverlayer .legend text,
+html body .js-plotly-plot .plotly .hoverlayer .legend .legendtitletext {
+  fill: var(--rd-text) !important;
+}
+
+/* ---------- Query: кнопка "Add Visualization" ---------- */
+html body .query-page-wrapper .ant-tabs-extra-content,
+html body .query-visualization-tabs .ant-tabs-extra-content {
+  display: flex !important;
+  align-items: center !important;
+  align-self: stretch !important;
+}
+html body .query-page-wrapper .add-visualization-button,
+html body .query-visualization-tabs .add-visualization-button {
+  height: auto !important;
+  line-height: 1.5715 !important;
+  padding: 4px 12px !important;
+  margin: 0 !important;
+  top: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px;
+  color: var(--rd-text-2) !important;
+  background: transparent !important;
+  border-color: transparent !important;
+}
+html body .query-page-wrapper .add-visualization-button:hover,
+html body .query-visualization-tabs .add-visualization-button:hover {
+  color: var(--rd-accent-h) !important;
+  background: var(--rd-hover) !important;
+}
+html body .query-page-wrapper .add-visualization-button .fa,
+html body .query-page-wrapper .add-visualization-button .anticon {
+  color: var(--rd-accent) !important;
+}
+
+/* ---------- Списки запросов/дашбордов: теги в строке ---------- */
+html body .ant-table .tags-control,
+html body .ant-table .tags-list,
+html body .table-main-title .tags-control,
+html body .list-group-item .tags-control {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Бейдж "Unpublished" — в стиле остальных тегов */
+html body .label-default,
+html body .label.label-default {
+  background-color: rgba(245,184,74,.12) !important;
+  border: 1px solid rgba(245,184,74,.35) !important;
+  color: var(--rd-warning) !important;
+  font-weight: 500;
+  text-shadow: none !important;
+}
+`;
+
+  const STYLE_ID = 'redash-dark-theme';
+  let enabled = GM_getValue('enabled', true);
+  let styleEl = null;
+
+  function apply() {
+    if (enabled && !styleEl) {
+      styleEl = GM_addStyle(CSS);
+      if (styleEl) styleEl.id = STYLE_ID;
+    } else if (!enabled && styleEl) {
+      styleEl.remove();
+      styleEl = null;
+    }
+  }
+
+  //function toggle() {
+    //enabled = !enabled;
+  //  GM_setValue('enabled', enabled);
+//    apply();
+  //}
+
+      function toggle() {
+    enabled = !enabled;
+    GM_setValue('enabled', enabled);
+    apply();
+    if (enabled) fixWhites(); else unfixWhites();
+  }
+
+  apply();
+  GM_registerMenuCommand('Toggle Redash dark', toggle);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.altKey && e.shiftKey && (e.code === 'KeyD')) {
+      e.preventDefault();
+      toggle();
+    }
+  }, true);
+
+      // ---------- Fallback: перекрашиваем всё, что осталось белым ----------
+  const SKIP = 'img, svg, canvas, video, iframe, .ace_editor, .ace_editor *, ' +
+               '.js-plotly-plot *, .leaflet-container *, .ant-btn-primary, .btn-primary';
+  const SURFACE = '#1b222b';
+
+  function isWhite(bg) {
+    const m = bg && bg.match(/rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?\)/);
+    if (!m) return false;
+    const [r, g, b] = [+m[1], +m[2], +m[3]];
+    const a = m[4] === undefined ? 1 : +m[4];
+    return a > 0.5 && r >= 235 && g >= 235 && b >= 235;
+  }
+
+  function fixWhites(root) {
+    if (!enabled || !document.body) return;
+    const nodes = (root && root.querySelectorAll ? root : document.body).querySelectorAll('*');
+    for (const el of nodes) {
+      if (el.matches(SKIP)) continue;
+      if (isWhite(getComputedStyle(el).backgroundColor)) {
+        el.style.setProperty('background-color', SURFACE, 'important');
+        el.classList.add('rd-dark-fixed');
+      }
+    }
+  }
+
+  function unfixWhites() {
+    document.querySelectorAll('.rd-dark-fixed').forEach((el) => {
+      el.style.removeProperty('background-color');
+      el.classList.remove('rd-dark-fixed');
+    });
+  }
+
+  let fixTimer = null;
+  const observer = new MutationObserver(() => {
+    clearTimeout(fixTimer);
+    fixTimer = setTimeout(() => fixWhites(), 150);
+  });
+
+  function startFixer() {
+    fixWhites();
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
+  }
+
+  if (document.body) startFixer();
+  else document.addEventListener('DOMContentLoaded', startFixer);
+
+})();
